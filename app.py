@@ -1,5 +1,10 @@
 from flask import Flask, jsonify
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -22,6 +27,10 @@ def status():
     })
 
 if __name__ == '__main__':
-    # Get port from environment variable or default to 5000
-    port = int(os.getenv('PORT', 5000))
-    app.run(host='0.0.0.0', port=port) 
+    try:
+        port = int(os.getenv('PORT', 5000))
+        logger.info(f"Starting server on port {port}")
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        logger.error(f"Error starting server: {str(e)}")
+        raise 
