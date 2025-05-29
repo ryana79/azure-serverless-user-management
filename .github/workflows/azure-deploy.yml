@@ -34,7 +34,7 @@ jobs:
         
     - name: Create startup file
       run: |
-        echo "gunicorn --bind=0.0.0.0 --timeout 600 app:app" > startup.txt
+        echo "gunicorn --bind=0.0.0.0 --timeout 600 --workers 4 --access-logfile - --error-logfile - app:app" > startup.txt
         
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
