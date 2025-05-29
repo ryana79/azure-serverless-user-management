@@ -6,6 +6,12 @@ A demonstration of CI/CD pipeline implementation using GitHub Actions and Azure 
 
 This project showcases a simple Flask web application with automated deployment to Azure App Service using GitHub Actions. The application includes a home route and an API status endpoint.
 
+## Deployment Status
+
+- **Production URL:** https://flask-azure-portfolio-demo.azurewebsites.net
+- **Last Deployed:** [GitHub Actions will update this timestamp]
+- **Build Status:** [![Deploy to Azure](https://github.com/ryana79/flask-azure-demo/actions/workflows/deploy.yml/badge.svg)](https://github.com/ryana79/flask-azure-demo/actions/workflows/deploy.yml)
+
 ## CI/CD Pipeline
 
 ```mermaid
