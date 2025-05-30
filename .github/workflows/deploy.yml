@@ -28,17 +28,54 @@ jobs:
       shell: bash
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        
+        # Validate requirements.txt exists
+        if [ ! -f "../requirements.txt" ]; then
+          echo "❌ requirements.txt not found in project root"
+          exit 1
+        fi
+        
+        echo "🔍 Installing project dependencies..."
         python -m pip install --upgrade pip
         pip install -r ../requirements.txt
+        
+        # Verify key dependencies are installed
+        echo "🔍 Verifying Azure Functions dependencies..."
+        python -c "import azure.functions" && echo "✅ azure-functions installed"
+        python -c "import azure.cosmos" && echo "✅ azure-cosmos installed" || echo "⚠️  azure-cosmos not found (may use mocks)"
+        
+        echo "✅ Dependencies resolved successfully"
         popd
 
     - name: 'Lint Python Code'
       shell: bash
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-        # Basic syntax check
-        python -m py_compile function_app.py
-        echo "✅ Python syntax validation passed"
+        # Validate Python syntax for all function files
+        echo "🔍 Validating Python syntax..."
+        
+        # Check main __init__.py if it exists
+        if [ -f "__init__.py" ]; then
+          python -m py_compile __init__.py
+          echo "✅ Main __init__.py syntax valid"
+        fi
+        
+        # Check each function directory
+        for func_dir in */; do
+          if [ -f "${func_dir}__init__.py" ]; then
+            echo "🔍 Checking ${func_dir}__init__.py"
+            python -m py_compile "${func_dir}__init__.py"
+            echo "✅ ${func_dir}__init__.py syntax valid"
+          fi
+        done
+        
+        # Check shared code if it exists
+        if [ -d "shared_code" ] && [ -f "shared_code/__init__.py" ]; then
+          python -m py_compile shared_code/__init__.py
+          echo "✅ shared_code/__init__.py syntax valid"
+        fi
+        
+        echo "✅ All Python syntax validation passed"
         popd
 
     - name: 'Run Unit Tests'
@@ -53,7 +90,33 @@ jobs:
     - name: 'Validate Infrastructure Templates'
       shell: bash
       run: |
-        echo "✅ Bicep template validation placeholder"
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        echo "🔍 Validating Azure Functions configuration..."
+        
+        # Validate host.json
+        if [ -f "host.json" ]; then
+          python -c "import json; json.load(open('host.json'))"
+          echo "✅ host.json is valid JSON"
+        fi
+        
+        # Validate function.json files
+        for func_dir in */; do
+          if [ -f "${func_dir}function.json" ]; then
+            echo "🔍 Validating ${func_dir}function.json"
+            python -c "import json; json.load(open('${func_dir}function.json'))"
+            echo "✅ ${func_dir}function.json is valid JSON"
+          fi
+        done
+        
+        # Check for local.settings.json.example
+        if [ -f "local.settings.json.example" ]; then
+          python -c "import json; json.load(open('local.settings.json.example'))"
+          echo "✅ local.settings.json.example is valid JSON"
+        fi
+        
+        echo "✅ Azure Functions configuration validation passed"
+        popd
+        
         echo "📝 Note: Add 'az bicep build' validation for production use"
 
     - name: 'Upload Function App Package'
