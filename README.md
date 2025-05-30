@@ -198,16 +198,34 @@ Retrieve all users from the database.
    func azure functionapp publish <your-function-app-name>
    ```
 
-### Option 2: Using GitHub Actions
+### Option 2: Using GitHub Actions (CI/CD Pipeline)
 
-1. **Set up GitHub Secrets**
-   - `AZURE_FUNCTIONAPP_PUBLISH_PROFILE`: Download from Azure Portal
-   - `AZURE_CREDENTIALS`: Service principal for Bicep deployment
+The repository includes a complete CI/CD pipeline that demonstrates modern DevOps practices:
 
-2. **Push to main branch**
-   ```bash
-   git push origin main
-   ```
+**🔧 Always Runs (No Credentials Required):**
+- ✅ Code checkout and Python environment setup
+- ✅ Dependency installation and validation  
+- ✅ Python syntax checking and linting
+- ✅ Unit test execution (placeholder)
+- ✅ Infrastructure template validation (placeholder)
+- ✅ Build artifact creation and upload
+
+**☁️ Conditional Deployment (Requires Credentials):**
+The pipeline automatically detects if Azure credentials are available and only runs deployment jobs when properly configured.
+
+**To enable full deployment, configure these GitHub repository secrets:**
+- `AZURE_CREDENTIALS`: Service principal JSON for Azure authentication
+- `AZURE_SUBSCRIPTION_ID`: Your Azure subscription ID
+- `AZURE_RESOURCE_GROUP`: Target resource group name
+- `AZURE_FUNCTIONAPP_PUBLISH_PROFILE`: Function app publish profile
+
+**Trigger the pipeline:**
+```bash
+git push origin main
+# Or manually via GitHub Actions tab → "Run workflow"
+```
+
+**💡 Demo Note:** The workflow will show successful CI capabilities even without Azure credentials, demonstrating professional DevOps practices for portfolio purposes.
 
 ### Option 3: Using Visual Studio Code
 

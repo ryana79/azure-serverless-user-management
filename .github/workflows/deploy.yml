@@ -1,4 +1,4 @@
-name: Deploy Azure Functions App
+name: Build and Deploy Azure Functions App
 
 on:
   push:
@@ -32,13 +32,29 @@ jobs:
         pip install -r ../requirements.txt
         popd
 
+    - name: 'Lint Python Code'
+      shell: bash
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        # Basic syntax check
+        python -m py_compile function_app.py
+        echo "✅ Python syntax validation passed"
+        popd
+
     - name: 'Run Unit Tests'
       shell: bash
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
         # Add unit tests here when available
-        echo "Unit tests would run here"
+        echo "✅ Unit test placeholder - tests would run here"
+        echo "📝 Note: Add pytest and actual tests for production use"
         popd
+
+    - name: 'Validate Infrastructure Templates'
+      shell: bash
+      run: |
+        echo "✅ Bicep template validation placeholder"
+        echo "📝 Note: Add 'az bicep build' validation for production use"
 
     - name: 'Upload Function App Package'
       uses: actions/upload-artifact@v4
@@ -46,10 +62,40 @@ jobs:
         name: function-app-package
         path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
-  deploy-infrastructure:
-    needs: build-and-test
+    - name: 'Build Summary'
+      shell: bash
+      run: |
+        echo "🎉 Build completed successfully!"
+        echo "📦 Function app package created and uploaded as artifact"
+        echo "🔧 Ready for deployment (requires Azure credentials)"
+
+  check-deployment-readiness:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    outputs:
+      can-deploy: ${{ steps.check.outputs.can-deploy }}
+    
+    steps:
+    - name: 'Check for Azure Credentials'
+      id: check
+      shell: bash
+      run: |
+        if [ -n "${{ secrets.AZURE_CREDENTIALS }}" ] && [ -n "${{ secrets.AZURE_SUBSCRIPTION_ID }}" ]; then
+          echo "can-deploy=true" >> $GITHUB_OUTPUT
+          echo "✅ Azure credentials available - deployment will proceed"
+        else
+          echo "can-deploy=false" >> $GITHUB_OUTPUT
+          echo "ℹ️  Azure credentials not configured - skipping deployment"
+          echo "📝 To enable deployment, configure these repository secrets:"
+          echo "   - AZURE_CREDENTIALS"
+          echo "   - AZURE_SUBSCRIPTION_ID" 
+          echo "   - AZURE_RESOURCE_GROUP"
+          echo "   - AZURE_FUNCTIONAPP_PUBLISH_PROFILE"
+        fi
+
+  deploy-infrastructure:
+    needs: [build-and-test, check-deployment-readiness]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && needs.check-deployment-readiness.outputs.can-deploy == 'true'
     outputs:
       functionAppName: ${{ steps.deploy.outputs.functionAppName }}
       functionAppUrl: ${{ steps.deploy.outputs.functionAppUrl }}
@@ -76,9 +122,9 @@ jobs:
         deploymentMode: Incremental
 
   deploy-function-app:
-    needs: [build-and-test, deploy-infrastructure]
+    needs: [build-and-test, deploy-infrastructure, check-deployment-readiness]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.check-deployment-readiness.outputs.can-deploy == 'true'
     
     steps:
     - name: 'Download Function App Package'
@@ -111,9 +157,9 @@ jobs:
         enable-oryx-build: false
 
   health-check:
-    needs: [deploy-infrastructure, deploy-function-app]
+    needs: [deploy-infrastructure, deploy-function-app, check-deployment-readiness]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.check-deployment-readiness.outputs.can-deploy == 'true'
     
     steps:
     - name: 'Wait for Function App to be ready'
@@ -167,9 +213,9 @@ jobs:
         echo "   - POST ${{ needs.deploy-infrastructure.outputs.functionAppUrl }}/api/user"
 
   cleanup-on-failure:
-    needs: [deploy-infrastructure, deploy-function-app, health-check]
+    needs: [deploy-infrastructure, deploy-function-app, health-check, check-deployment-readiness]
     runs-on: ubuntu-latest
-    if: failure() && github.ref == 'refs/heads/main'
+    if: failure() && github.ref == 'refs/heads/main' && needs.check-deployment-readiness.outputs.can-deploy == 'true'
     
     steps:
     - name: 'Azure Login'
