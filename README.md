@@ -37,6 +37,67 @@ graph TB
 - **Security**: Environment-based configuration, no hardcoded secrets
 - **Frontend**: Optional lightweight HTML/JS interface
 
+## 🌐 Live Demo
+
+**🔗 API Base URL**: `https://userapp-api-1748567549.azurewebsites.net`
+
+### Try the API Now:
+
+#### 1. **Get All Users** (View existing data)
+```bash
+curl https://userapp-api-1748567549.azurewebsites.net/api/users
+```
+
+#### 2. **Create a New User**
+```bash
+curl -X POST https://userapp-api-1748567549.azurewebsites.net/api/user \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Your Name", "email": "your.email@example.com"}'
+```
+
+### 🖥️ **Frontend Demo**
+
+**Access the web interface**:
+1. Download `frontend/index.html` from this repository
+2. Open it in your browser
+3. The API URL is pre-configured to point to the live demo
+4. Try the features:
+   - **Test Connection**: Verify API connectivity
+   - **Add New User**: Create users with the form
+   - **Refresh Users**: View all users in real-time
+   - **View Statistics**: See usage counters
+
+### 📱 **What You Can Do**:
+- ✅ **Create users** with name and email validation
+- ✅ **View all users** in JSON format or via the frontend
+- ✅ **Test error handling** with invalid data
+- ✅ **Monitor responses** with proper HTTP status codes
+- ✅ **Experience CORS-enabled** cross-origin requests
+
+### 🔍 **API Response Examples**:
+
+**GET /api/users** returns:
+```json
+[
+  {
+    "id": "8c9cba29-3169-4492-bd8b-2a67a507a95b",
+    "name": "Test User 1", 
+    "email": "test1@example.com"
+  }
+]
+```
+
+**POST /api/user** with `{"name": "John", "email": "john@example.com"}` returns:
+```json
+{
+  "id": "generated-uuid",
+  "name": "John",
+  "email": "john@example.com", 
+  "created_at": "2025-05-30T01:34:20.263151",
+  "status": "created"
+}
+```
+
 ## 📊 API Reference
 
 ### POST /user
