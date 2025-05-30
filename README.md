@@ -1,8 +1,8 @@
 # Azure Serverless User Management System
 
-[![Deploy to Azure](https://github.com/ryanamir/cloud-project/actions/workflows/deploy.yml/badge.svg)](https://github.com/ryanamir/cloud-project/actions/workflows/deploy.yml)
-
 A modern, serverless cloud application built with Azure Functions and Cosmos DB that demonstrates cloud engineering best practices for 2025. This project showcases skills in serverless architecture, Infrastructure as Code (IaC), CI/CD pipelines, and cloud-native development.
+
+> 📝 **Note**: The GitHub Actions workflow is configured for automated deployment but requires Azure credentials to execute. The application is already deployed and accessible via the live demo below.
 
 ## 🏗️ Architecture
 
