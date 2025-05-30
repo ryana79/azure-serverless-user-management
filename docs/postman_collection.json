@@ -1,0 +1,151 @@
+{
+  "info": {
+    "name": "Azure Serverless User Management API",
+    "description": "API collection for testing the Azure Functions user management endpoints",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://your-function-app.azurewebsites.net",
+      "description": "Base URL of your Azure Function App"
+    }
+  ],
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ryan Amir\",\n  \"email\": \"ryan@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user"]
+            },
+            "description": "Create a new user with name and email"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Ryan Amir\",\n  \"email\": \"ryan@example.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "user"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"name\": \"Ryan Amir\",\n  \"email\": \"ryan@example.com\",\n  \"created_at\": \"2025-01-01T12:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Retrieve all users from the database"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "users"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"name\": \"Ryan Amir\",\n    \"email\": \"ryan@example.com\",\n    \"created_at\": \"2025-01-01T12:00:00.000Z\"\n  },\n  {\n    \"id\": \"456e7890-e12b-34d5-a678-901234567890\",\n    \"name\": \"Jane Doe\",\n    \"email\": \"jane@example.com\",\n    \"created_at\": \"2025-01-01T13:00:00.000Z\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Test Connection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Simple health check to verify the API is responding"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Add timestamp to requests",
+          "pm.globals.set('timestamp', new Date().toISOString());"
+        ]
+      }
+    }
+  ]
+} 

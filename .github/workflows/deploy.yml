@@ -1,0 +1,184 @@
+name: Deploy Azure Functions App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './function_app'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v4
+
+    - name: Setup Python ${{ env.PYTHON_VERSION }} Environment
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: 'Resolve Project Dependencies Using Pip'
+      shell: bash
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        python -m pip install --upgrade pip
+        pip install -r ../requirements.txt
+        popd
+
+    - name: 'Run Unit Tests'
+      shell: bash
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        # Add unit tests here when available
+        echo "Unit tests would run here"
+        popd
+
+    - name: 'Upload Function App Package'
+      uses: actions/upload-artifact@v3
+      with:
+        name: function-app-package
+        path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
+  deploy-infrastructure:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      functionAppName: ${{ steps.deploy.outputs.functionAppName }}
+      functionAppUrl: ${{ steps.deploy.outputs.functionAppUrl }}
+    
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v4
+
+    - name: 'Azure Login'
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: 'Deploy Infrastructure'
+      id: deploy
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
+        template: ./infrastructure/main.bicep
+        parameters: |
+          appName=userapp-${{ github.run_number }}
+          environment=dev
+        deploymentMode: Incremental
+
+  deploy-function-app:
+    needs: [build-and-test, deploy-infrastructure]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 'Download Function App Package'
+      uses: actions/download-artifact@v3
+      with:
+        name: function-app-package
+        path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
+    - name: Setup Python ${{ env.PYTHON_VERSION }} Environment
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: 'Resolve Project Dependencies Using Pip'
+      shell: bash
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        python -m pip install --upgrade pip
+        pip install -r ../requirements.txt --target=".python_packages/lib/site-packages"
+        popd
+
+    - name: 'Deploy Azure Functions'
+      uses: Azure/functions-action@v1
+      id: deploy-function
+      with:
+        app-name: ${{ needs.deploy-infrastructure.outputs.functionAppName }}
+        package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+        scm-do-build-during-deployment: false
+        enable-oryx-build: false
+
+  health-check:
+    needs: [deploy-infrastructure, deploy-function-app]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 'Wait for Function App to be ready'
+      shell: bash
+      run: |
+        echo "Waiting 30 seconds for function app to be ready..."
+        sleep 30
+
+    - name: 'Health Check - GET /users'
+      shell: bash
+      run: |
+        FUNCTION_URL="${{ needs.deploy-infrastructure.outputs.functionAppUrl }}"
+        echo "Testing GET $FUNCTION_URL/api/users"
+        
+        # Test GET /users endpoint
+        response=$(curl -s -o /dev/null -w "%{http_code}" "$FUNCTION_URL/api/users")
+        if [ $response -eq 200 ]; then
+          echo "✅ GET /users endpoint is healthy (HTTP $response)"
+        else
+          echo "❌ GET /users endpoint failed (HTTP $response)"
+          exit 1
+        fi
+
+    - name: 'Health Check - POST /user'
+      shell: bash
+      run: |
+        FUNCTION_URL="${{ needs.deploy-infrastructure.outputs.functionAppUrl }}"
+        echo "Testing POST $FUNCTION_URL/api/user"
+        
+        # Test POST /user endpoint
+        response=$(curl -s -o /dev/null -w "%{http_code}" \
+          -X POST "$FUNCTION_URL/api/user" \
+          -H "Content-Type: application/json" \
+          -d '{"name": "GitHub Actions Test", "email": "test@github.com"}')
+        
+        if [ $response -eq 201 ]; then
+          echo "✅ POST /user endpoint is healthy (HTTP $response)"
+        else
+          echo "❌ POST /user endpoint failed (HTTP $response)"
+          exit 1
+        fi
+
+    - name: 'Deployment Success Notification'
+      if: success()
+      shell: bash
+      run: |
+        echo "🎉 Deployment completed successfully!"
+        echo "📱 Function App URL: ${{ needs.deploy-infrastructure.outputs.functionAppUrl }}"
+        echo "🔗 API Endpoints:"
+        echo "   - GET  ${{ needs.deploy-infrastructure.outputs.functionAppUrl }}/api/users"
+        echo "   - POST ${{ needs.deploy-infrastructure.outputs.functionAppUrl }}/api/user"
+
+  cleanup-on-failure:
+    needs: [deploy-infrastructure, deploy-function-app, health-check]
+    runs-on: ubuntu-latest
+    if: failure() && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 'Azure Login'
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: 'Cleanup Failed Deployment'
+      shell: bash
+      run: |
+        echo "⚠️ Deployment failed. Consider cleaning up resources manually if needed."
+        echo "Resource Group: ${{ secrets.AZURE_RESOURCE_GROUP }}" 
