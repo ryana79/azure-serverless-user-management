@@ -57,15 +57,21 @@ curl -X POST https://userapp-api-1748567549.azurewebsites.net/api/user \
 
 ### 🖥️ **Frontend Demo**
 
-**Access the web interface**:
+**Option 1: Live Demo (Coming Soon!)**
+- 🚀 **Netlify URL**: `https://azure-user-manager.netlify.app` (Deploy following `docs/netlify-deployment.md`)
+- ✨ Fully hosted with HTTPS and CDN
+- 🔄 Auto-updates with repository changes
+
+**Option 2: Local Access**
 1. Download `frontend/index.html` from this repository
 2. Open it in your browser
 3. The API URL is pre-configured to point to the live demo
-4. Try the features:
-   - **Test Connection**: Verify API connectivity
-   - **Add New User**: Create users with the form
-   - **Refresh Users**: View all users in real-time
-   - **View Statistics**: See usage counters
+
+**Try these features**:
+- **Test Connection**: Verify API connectivity
+- **Add New User**: Create users with the form
+- **Refresh Users**: View all users in real-time
+- **View Statistics**: See usage counters
 
 ### 📱 **What You Can Do**:
 - ✅ **Create users** with name and email validation
