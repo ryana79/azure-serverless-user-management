@@ -57,8 +57,8 @@ curl -X POST https://userapp-api-1748567549.azurewebsites.net/api/user \
 
 ### 🖥️ **Frontend Demo**
 
-**Option 1: Live Demo (Coming Soon!)**
-- 🚀 **Netlify URL**: `https://azure-user-manager.netlify.app` (Deploy following `docs/netlify-deployment.md`)
+**Option 1: Live Demo **
+- 🚀 **Netlify URL**: `https://azure-user-manager.netlify.app](https://azureusermanager.com/` (Deploy following `docs/netlify-deployment.md`)
 - ✨ Fully hosted with HTTPS and CDN
 - 🔄 Auto-updates with repository changes
 
